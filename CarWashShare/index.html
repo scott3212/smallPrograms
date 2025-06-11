@@ -28,6 +28,61 @@
 				text-align: left; 
 				font-size: 18px;
 				}
+
+			/* Spending items styling */
+			.spending-item {
+				margin: 10px 0;
+				padding: 10px;
+				border: 1px solid #ddd;
+				border-radius: 5px;
+				background: #f9f9f9;
+			}
+
+			.spending-item input {
+				margin: 5px;
+				padding: 5px;
+			}
+
+			.item-name {
+				width: 200px;
+			}
+
+			.item-price {
+				width: 100px;
+			}
+
+			.remove-item {
+				background: #e74c3c;
+				color: white;
+				border: none;
+				padding: 5px 10px;
+				border-radius: 3px;
+				cursor: pointer;
+			}
+
+			.remove-item:hover {
+				background: #c0392b;
+			}
+
+			#add-item {
+				background: #27ae60;
+				color: white;
+				border: none;
+				padding: 8px 15px;
+				border-radius: 5px;
+				cursor: pointer;
+				margin: 10px 0;
+			}
+
+			#add-item:hover {
+				background: #229954;
+			}
+
+			#total-display {
+				font-weight: bold;
+				font-size: 18px;
+				color: #2c3e50;
+			}
 		</style>
     </head>
     <body>
@@ -39,8 +94,18 @@
             <input type="number" id="num-days" name="num-days"><br>
 			<label for="names">Names (separated by comma):</label>
 			<input type="text" id="names" name="names"><br>
-			<label for="total-cost">Total Cost:</label>
-			<input type="number" id="total-cost" name="total-cost" step="0.01"><br>
+			
+			<label>Spending Items:</label>
+			<div id="spending-items">
+				<div class="spending-item">
+					<input type="text" class="item-name" placeholder="Item name" required>
+					<input type="number" class="item-price" placeholder="Price" step="0.01" required>
+					<button type="button" class="remove-item" onclick="removeSpendingItem(this)">Remove</button>
+				</div>
+			</div>
+			<button type="button" id="add-item" onclick="addSpendingItem()">Add Item</button><br><br>
+			
+			<div id="total-display">Total Cost: $0.00</div><br>
             <input type="submit" value="Generate Calendar">
         </form>
 		<div id="summary"></div>
@@ -51,6 +116,59 @@
 			const calendar = document.getElementById('calendar');
 			const summary = document.getElementById('summary');
 
+			// Function to add new spending item
+			function addSpendingItem() {
+				const spendingItems = document.getElementById('spending-items');
+				const newItem = document.createElement('div');
+				newItem.className = 'spending-item';
+				newItem.innerHTML = `
+					<input type="text" class="item-name" placeholder="Item name" required>
+					<input type="number" class="item-price" placeholder="Price" step="0.01" required>
+					<button type="button" class="remove-item" onclick="removeSpendingItem(this)">Remove</button>
+				`;
+				spendingItems.appendChild(newItem);
+				
+				// Add event listener to new price input
+				const priceInput = newItem.querySelector('.item-price');
+				priceInput.addEventListener('input', updateTotal);
+			}
+
+			// Function to remove spending item
+			function removeSpendingItem(button) {
+				const spendingItems = document.getElementById('spending-items');
+				const items = spendingItems.querySelectorAll('.spending-item');
+				
+				// Only allow removal if more than one item exists
+				if (items.length > 1) {
+					button.parentElement.remove();
+					updateTotal();
+				} else {
+					alert('At least one item is required.');
+				}
+			}
+
+			// Function to calculate and update total cost
+			function updateTotal() {
+				const priceInputs = document.querySelectorAll('.item-price');
+				let total = 0;
+				
+				priceInputs.forEach(input => {
+					const value = parseFloat(input.value) || 0;
+					total += value;
+				});
+				
+				document.getElementById('total-display').textContent = `Total Cost: $${total.toFixed(2)}`;
+				return total;
+			}
+
+			// Add event listeners to existing price inputs on page load
+			document.addEventListener('DOMContentLoaded', function() {
+				const priceInputs = document.querySelectorAll('.item-price');
+				priceInputs.forEach(input => {
+					input.addEventListener('input', updateTotal);
+				});
+			});
+
 			// Add submit event listener to form
 			form.addEventListener('submit', function(e) {
 			    e.preventDefault(); // prevent form from submitting
@@ -59,7 +177,7 @@
 			    const startDateInput = document.getElementById('start-date');
 			    const numDaysInput = document.getElementById('num-days');
 				const names = document.getElementById('names').value.split(",");
-				const totalCost = document.getElementById('total-cost').value;
+				const totalCost = updateTotal(); // Get total from spending items
 				let nameDict = {}
 				for (const name of names) {
 					nameDict[name] = 0;
@@ -93,17 +211,29 @@
 					}
 				}
 				
-				let tableHtml = '<h2>Cost Summary</h2><br><table><thead><tr><th>Name</th><th>Cost</th></tr></thead><tbody>'
+				// Generate spending items breakdown
+				let summaryHtml = '<h2>Spending Items</h2><table><thead><tr><th>Item</th><th>Price</th></tr></thead><tbody>';
+				const spendingItems = document.querySelectorAll('.spending-item');
+				spendingItems.forEach(item => {
+					const itemName = item.querySelector('.item-name').value || 'Unnamed Item';
+					const itemPrice = parseFloat(item.querySelector('.item-price').value) || 0;
+					summaryHtml += `<tr><td>${itemName}</td><td>$${itemPrice.toFixed(2)}</td></tr>`;
+				});
+				summaryHtml += `<tr style="font-weight: bold; background: #3498db; color: white;"><td>Total</td><td>$${totalCost.toFixed(2)}</td></tr>`;
+				summaryHtml += '</tbody></table><br>';
+				
+				// Generate cost breakdown by person
+				summaryHtml += '<h2>Cost Breakdown by Person</h2><table><thead><tr><th>Name</th><th>Days</th><th>Cost</th></tr></thead><tbody>'
 				for (const name in nameDict) {
 					if (nameDict.hasOwnProperty(name)) {
 						let cost = (nameDict[name] / sum) * totalCost;
 						cost = (Math.round(cost * 100) / 100).toFixed(2);
-						tableHtml += `<tr><td>${name}</td><td>${cost}</td></tr>`;
+						summaryHtml += `<tr><td>${name}</td><td>${nameDict[name]}</td><td>$${cost}</td></tr>`;
 					}
 				}
 				
-				tableHtml += '</tbody></table>';
-				return tableHtml;
+				summaryHtml += '</tbody></table>';
+				return summaryHtml;
 			}
 
 			// Function to generate calendar HTML
