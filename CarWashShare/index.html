@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Calendar Generator</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<style>
+			table { 
+				width: 750px; 
+				border-collapse: collapse; 
+				margin:50px auto;
+				}
+
+			/* Zebra striping */
+			tr:nth-of-type(odd) { 
+				background: #eee; 
+				}
+
+			th { 
+				background: #3498db; 
+				color: white; 
+				font-weight: bold; 
+				}
+
+			td, th { 
+				padding: 10px; 
+				border: 1px solid #ccc; 
+				text-align: left; 
+				font-size: 18px;
+				}
+		</style>
+    </head>
+    <body>
+        <h1>Calendar Generator</h1>
+        <form method="get" action="#" id="calendar-form">
+            <label for="start-date">Start Date:</label>
+            <input type="date" id="start-date" name="start-date"><br>
+            <label for="num-days">Number of Days:</label>
+            <input type="number" id="num-days" name="num-days"><br>
+			<label for="names">Names (separated by comma):</label>
+			<input type="text" id="names" name="names"><br>
+			<label for="total-cost">Total Cost:</label>
+			<input type="number" id="total-cost" name="total-cost" step="0.01"><br>
+            <input type="submit" value="Generate Calendar">
+        </form>
+		<div id="summary"></div>
+        <div id="calendar"></div>
+        <script>
+			// Get form and calendar elements
+			const form = document.getElementById('calendar-form');
+			const calendar = document.getElementById('calendar');
+			const summary = document.getElementById('summary');
+
+			// Add submit event listener to form
+			form.addEventListener('submit', function(e) {
+			    e.preventDefault(); // prevent form from submitting
+
+			    // Get start date and number of days inputs
+			    const startDateInput = document.getElementById('start-date');
+			    const numDaysInput = document.getElementById('num-days');
+				const names = document.getElementById('names').value.split(",");
+				const totalCost = document.getElementById('total-cost').value;
+				let nameDict = {}
+				for (const name of names) {
+					nameDict[name] = 0;
+				}
+
+			    // Parse input values
+			    const startDate = new Date(startDateInput.value);
+			    const numDays = parseInt(numDaysInput.value);
+
+			    // Calculate end date
+			    const endDate = new Date(startDate.getTime() + (numDays) * 24 * 60 * 60 * 1000);
+
+			    // Generate calendar
+			    const calendarHtml = generateCalendarHtml(startDate, endDate, names, nameDict);
+			    calendar.innerHTML = calendarHtml;
+				
+				// Generate summary
+				const summaryHtml = generateSummary(nameDict, totalCost);
+				summary.innerHTML = summaryHtml;
+				
+				console.log(nameDict);
+			});
+			
+			// Function to generate summary
+			function generateSummary(nameDict, totalCost) {
+				let sum = 0;
+				
+				for (const key in nameDict) {
+					if (nameDict.hasOwnProperty(key)) {
+						sum += nameDict[key];
+					}
+				}
+				
+				let tableHtml = '<h2>Cost Summary</h2><br><table><thead><tr><th>Name</th><th>Cost</th></tr></thead><tbody>'
+				for (const name in nameDict) {
+					if (nameDict.hasOwnProperty(name)) {
+						let cost = (nameDict[name] / sum) * totalCost;
+						cost = (Math.round(cost * 100) / 100).toFixed(2);
+						tableHtml += `<tr><td>${name}</td><td>${cost}</td></tr>`;
+					}
+				}
+				
+				tableHtml += '</tbody></table>';
+				return tableHtml;
+			}
+
+			// Function to generate calendar HTML
+			function generateCalendarHtml(startDate, endDate, names, nameDict) {
+				console.log("startDate:" + startDate);
+				console.log("endDate:" + endDate);
+			    let calendarHtml = '';
+				let isFirstMonth = true;
+				let isLastMonth = false;
+				let nameIdx = 0;
+				
+			    // Loop through each month
+			    for (let date = new Date(startDate.getFullYear(), startDate.getMonth(), 1); date <= endDate; date.setMonth(date.getMonth() + 1)) {
+					console.log("processing Month:" + date);
+					console.log("is date <= endDate?" + date <= endDate);
+					if(new Date(date.getFullYear(), date.getMonth() + 1, 1) > endDate) {
+						isLastMonth = true;
+					}
+				
+			        // Get month and year
+			        const month = date.toLocaleString('default', {
+			            month: 'long'
+			        });
+			        const year = date.getFullYear();
+
+			        // Generate month header
+			        calendarHtml += `<h2>${month} ${year}</h2>`;
+
+			        // Generate table header
+			        calendarHtml += '<table><thead><tr>';
+			        calendarHtml += '<th>Sun</th><th>Mon</th><th>Tue</th><th>Wed</th><th>Thu</th><th>Fri</th><th>Sat</th>';
+			        calendarHtml += '</tr></thead><tbody>';
+
+			        // Get first day of the month
+			        const firstDayOfMonth = new Date(date.getFullYear(), date.getMonth(), 1);
+
+			        // Generate table rows
+					let dayOfMonth = startDate.getDate()+1;
+					let firstDayOfMonthIndex = (startDate.getDay() + 1) % 7;
+					if(!isFirstMonth) {
+						dayOfMonth = 1;
+						firstDayOfMonthIndex = firstDayOfMonth.getDay();
+					}
+					let lastDayOfMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+					if(isLastMonth) {
+						lastDayOfMonth = endDate.getDate();
+					}
+			        while (dayOfMonth <= lastDayOfMonth) {
+			            calendarHtml += '<tr>';
+
+			            // Generate cells for each day of the week
+			            for (let i = 0; i < 7; i++) {
+							// if firstMonth, then need to skip the first few days if the first day is not sunday
+							if (isFirstMonth && i < firstDayOfMonthIndex) {
+								calendarHtml += '<td></td>';
+							} else if ((i >= firstDayOfMonthIndex || dayOfMonth > 1) && dayOfMonth <= lastDayOfMonth) {
+								isFirstMonth = false;
+								let currentName = names[nameIdx];
+								calendarHtml += `<td>${dayOfMonth}<br>${currentName}</td>`;
+								dayOfMonth++;
+								nameDict[names[nameIdx]] = nameDict[names[nameIdx]] + 1;
+								nameIdx = (nameIdx + 1) % (names.length);
+			                } else {
+			                    calendarHtml += '<td></td>';
+			                }
+			            }
+
+			            calendarHtml += '</tr>';
+			        }
+
+			        calendarHtml += '</tbody></table>';
+			    }
+
+			    return calendarHtml;
+			}
+		</script>
+    </body>
+</html>
