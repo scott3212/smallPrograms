@@ -10,6 +10,7 @@ CHECK_INTERVAL=30
 # Global variables for tracking uptime
 CURRENT_PID=""
 START_TIME=""
+UPTIME_RESULT=""
 
 # Colors for output
 RED='\033[0;31m'
@@ -41,12 +42,14 @@ is_qbittorrent_running() {
 reset_tracking() {
     CURRENT_PID=""
     START_TIME=""
+    UPTIME_RESULT=""
 }
 
-# Function to get uptime based on our tracked start time
-get_uptime() {
+# Function to calculate and update uptime tracking (modifies global variables)
+update_uptime_tracking() {
     local pid=$1
     if [ -z "$pid" ]; then
+        UPTIME_RESULT="Unknown"
         return 1
     fi
     
@@ -54,31 +57,37 @@ get_uptime() {
     if [ "$CURRENT_PID" != "$pid" ]; then
         CURRENT_PID="$pid"
         START_TIME=$(date +%s)
-        echo "0 minutes"
+        UPTIME_RESULT="0 seconds"
         return 0
     fi
     
     # Calculate uptime based on our tracked start time
     if [ -z "$START_TIME" ]; then
         START_TIME=$(date +%s)
-        echo "0 minutes"
+        UPTIME_RESULT="0 seconds"
         return 0
     fi
     
     local current_time=$(date +%s)
     local uptime_seconds=$((current_time - START_TIME))
     
-    # Calculate days, hours, minutes
+    # Debug: Add some logging to understand what's happening
+    # print_status $BLUE "DEBUG: PID=$pid, CURRENT_PID=$CURRENT_PID, current_time=$current_time, START_TIME=$START_TIME, uptime_seconds=$uptime_seconds"
+    
+    # Calculate days, hours, minutes, seconds
     local days=$((uptime_seconds / 86400))
     local hours=$(((uptime_seconds % 86400) / 3600))
     local minutes=$(((uptime_seconds % 3600) / 60))
+    local seconds=$((uptime_seconds % 60))
     
     if [ $days -gt 0 ]; then
-        echo "${days} days, ${hours} hours, ${minutes} minutes"
+        UPTIME_RESULT="${days} days, ${hours} hours, ${minutes} minutes"
     elif [ $hours -gt 0 ]; then
-        echo "${hours} hours, ${minutes} minutes"
+        UPTIME_RESULT="${hours} hours, ${minutes} minutes"
+    elif [ $minutes -gt 0 ]; then
+        UPTIME_RESULT="${minutes} minutes, ${seconds} seconds"
     else
-        echo "${minutes} minutes"
+        UPTIME_RESULT="${seconds} seconds"
     fi
 }
 
@@ -119,16 +128,17 @@ print_status $BLUE "PID file location: $PIDF"
 echo
 
 while true; do
+    # print_status $BLUE "DEBUG: Before check - CURRENT_PID='$CURRENT_PID', START_TIME='$START_TIME'"
+    
     pid=$(is_qbittorrent_running)
     
     if [ $? -eq 0 ]; then
         # qBittorrent is running
-        uptime=$(get_uptime "$pid")
-        if [ $? -eq 0 ]; then
-            print_status $GREEN "qBittorrent is running (PID: $pid) - Uptime: $uptime"
-        else
-            print_status $GREEN "qBittorrent is running (PID: $pid) - Uptime: Unknown"
-        fi
+        # print_status $BLUE "DEBUG: Found PID $pid, calling update_uptime_tracking"
+        update_uptime_tracking "$pid"
+        # print_status $BLUE "DEBUG: After update_uptime_tracking - CURRENT_PID='$CURRENT_PID', START_TIME='$START_TIME'"
+        
+        print_status $GREEN "qBittorrent is running (PID: $pid) - Uptime: $UPTIME_RESULT"
     else
         # qBittorrent is not running
         reset_tracking
