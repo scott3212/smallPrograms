@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="/share/CACHEDEV1_DATA/.qpkg/qBittorrent"
 QBITTORRENT_SCRIPT="$SCRIPT_DIR/qBittorrent.sh"
 PIDF="/var/run/qBittorrent.pid"
 PROCESS_NAME="qbittorrent-nox"
