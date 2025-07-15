@@ -80,5 +80,6 @@ Or if running in foreground, simply press `Ctrl+C`.
 
 - The script automatically detects its own location and looks for `qBittorrent.sh` in the same directory
 - It monitors qBittorrent by checking for the process name only (simplified and reliable)
-- The uptime calculation works on most Linux systems and uses `/proc/PID` information
-- Process detection uses `ps aux | grep` to find the `qbittorrent-nox` process (compatible with QNAP systems) 
+- The uptime calculation uses internal tracking - starts counting when the process is first detected
+- Process detection uses `ps aux | grep` to find the `qbittorrent-nox` process (compatible with QNAP systems)
+- Uptime resets when the process PID changes (indicating a restart) 

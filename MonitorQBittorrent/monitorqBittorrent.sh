@@ -1,11 +1,15 @@
 #!/bin/bash
 
 # Configuration
-SCRIPT_DIR="/share/CACHEDEV1_DATA/.qpkg/qBittorrent"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 QBITTORRENT_SCRIPT="$SCRIPT_DIR/qBittorrent.sh"
 PIDF="/var/run/qBittorrent.pid"
 PROCESS_NAME="qbittorrent-nox"
 CHECK_INTERVAL=30
+
+# Global variables for tracking uptime
+CURRENT_PID=""
+START_TIME=""
 
 # Colors for output
 RED='\033[0;31m'
@@ -33,30 +37,36 @@ is_qbittorrent_running() {
     return 1
 }
 
-# Function to get process start time and calculate uptime
+# Function to reset tracking when process is not found
+reset_tracking() {
+    CURRENT_PID=""
+    START_TIME=""
+}
+
+# Function to get uptime based on our tracked start time
 get_uptime() {
     local pid=$1
     if [ -z "$pid" ]; then
         return 1
     fi
     
-    # Get process start time (this works on most Linux systems)
-    local start_time
-    if command -v stat >/dev/null 2>&1; then
-        # Use stat on /proc/PID (more reliable)
-        start_time=$(stat -c %Y /proc/$pid 2>/dev/null)
-    elif command -v ps >/dev/null 2>&1; then
-        # Fallback to ps command
-        start_time=$(ps -o lstart= -p $pid 2>/dev/null | xargs -I {} date -d "{}" +%s 2>/dev/null)
+    # Check if this is a new PID or first time
+    if [ "$CURRENT_PID" != "$pid" ]; then
+        CURRENT_PID="$pid"
+        START_TIME=$(date +%s)
+        echo "0 minutes"
+        return 0
     fi
     
-    if [ -z "$start_time" ]; then
-        echo "Unable to determine start time"
-        return 1
+    # Calculate uptime based on our tracked start time
+    if [ -z "$START_TIME" ]; then
+        START_TIME=$(date +%s)
+        echo "0 minutes"
+        return 0
     fi
     
     local current_time=$(date +%s)
-    local uptime_seconds=$((current_time - start_time))
+    local uptime_seconds=$((current_time - START_TIME))
     
     # Calculate days, hours, minutes
     local days=$((uptime_seconds / 86400))
@@ -121,6 +131,7 @@ while true; do
         fi
     else
         # qBittorrent is not running
+        reset_tracking
         print_status $RED "qBittorrent is not running - attempting to start..."
         start_qbittorrent
     fi
