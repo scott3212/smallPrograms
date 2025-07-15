@@ -6,6 +6,7 @@ QBITTORRENT_SCRIPT="$SCRIPT_DIR/qBittorrent.sh"
 PIDF="/var/run/qBittorrent.pid"
 PROCESS_NAME="qbittorrent-nox"
 CHECK_INTERVAL=30
+DEBUG_MODE=false  # Set to true to enable debug output
 
 # Global variables for tracking uptime
 CURRENT_PID=""
@@ -24,6 +25,13 @@ print_status() {
     local color=$1
     local message=$2
     echo -e "${color}[$(date '+%Y-%m-%d %H:%M:%S')] ${message}${NC}"
+}
+
+# Function to print debug messages (only when DEBUG_MODE is enabled)
+debug_log() {
+    if [ "$DEBUG_MODE" = "true" ]; then
+        print_status $BLUE "DEBUG: $1"
+    fi
 }
 
 # Function to check if qBittorrent is running
@@ -72,7 +80,7 @@ update_uptime_tracking() {
     local uptime_seconds=$((current_time - START_TIME))
     
     # Debug: Add some logging to understand what's happening
-    # print_status $BLUE "DEBUG: PID=$pid, CURRENT_PID=$CURRENT_PID, current_time=$current_time, START_TIME=$START_TIME, uptime_seconds=$uptime_seconds"
+    debug_log "PID=$pid, CURRENT_PID=$CURRENT_PID, current_time=$current_time, START_TIME=$START_TIME, uptime_seconds=$uptime_seconds"
     
     # Calculate days, hours, minutes, seconds
     local days=$((uptime_seconds / 86400))
@@ -128,15 +136,15 @@ print_status $BLUE "PID file location: $PIDF"
 echo
 
 while true; do
-    # print_status $BLUE "DEBUG: Before check - CURRENT_PID='$CURRENT_PID', START_TIME='$START_TIME'"
+    debug_log "Before check - CURRENT_PID='$CURRENT_PID', START_TIME='$START_TIME'"
     
     pid=$(is_qbittorrent_running)
     
     if [ $? -eq 0 ]; then
         # qBittorrent is running
-        # print_status $BLUE "DEBUG: Found PID $pid, calling update_uptime_tracking"
+        debug_log "Found PID $pid, calling update_uptime_tracking"
         update_uptime_tracking "$pid"
-        # print_status $BLUE "DEBUG: After update_uptime_tracking - CURRENT_PID='$CURRENT_PID', START_TIME='$START_TIME'"
+        debug_log "After update_uptime_tracking - CURRENT_PID='$CURRENT_PID', START_TIME='$START_TIME'"
         
         print_status $GREEN "qBittorrent is running (PID: $pid) - Uptime: $UPTIME_RESULT"
     else

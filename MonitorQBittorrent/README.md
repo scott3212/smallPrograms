@@ -62,6 +62,7 @@ You can modify these variables in the script:
 - `CHECK_INTERVAL`: How often to check (default: 30 seconds)
 - `PIDF`: Location of the PID file (default: /var/run/qBittorrent.pid)
 - `PROCESS_NAME`: Name of the qBittorrent process (default: qbittorrent-nox)
+- `DEBUG_MODE`: Enable debug output (default: false, set to true for troubleshooting)
 
 ## Stopping the Monitor
 
@@ -75,6 +76,25 @@ kill <PID>
 ```
 
 Or if running in foreground, simply press `Ctrl+C`.
+
+## Debug Mode
+
+To enable detailed debugging output, edit the script and change:
+```bash
+DEBUG_MODE=false
+```
+to:
+```bash
+DEBUG_MODE=true
+```
+
+Debug mode will show additional information including:
+- Variable states before each check
+- PID detection details
+- Uptime calculation values
+- Function call traces
+
+This is useful for troubleshooting uptime tracking or process detection issues.
 
 ## Notes
 
