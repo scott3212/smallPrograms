@@ -1,0 +1,2 @@
+# Ignore local OAuth config for TuroChromePlugin
+TuroChromePlugin/auth/config.js
