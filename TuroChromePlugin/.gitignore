@@ -1,0 +1,11 @@
+# Local OAuth config (contains client ID) — keep private
+auth/config.js
+
+# OS/Editor
+.DS_Store
+Thumbs.db
+*.log
+/.vscode/
+/.idea/
+
+

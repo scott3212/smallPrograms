@@ -40,18 +40,43 @@ async function requestScrapeFromActiveTab() {
       return null;
     }
     setStatus('Requesting data from page...');
-    const response = await chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_PAGE_DATA' });
-    if (response?.ok) {
-      setStatus('Received data');
-      renderData(response.data);
-      // Persist via background for history
-      chrome.runtime.sendMessage({ type: 'TURO_PAGE_DATA', payload: response.data });
-      return response.data;
+    try {
+      const response = await chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_PAGE_DATA' });
+      if (response?.ok) {
+        setStatus('Received data');
+        renderData(response.data);
+        // Persist via background for history
+        chrome.runtime.sendMessage({ type: 'TURO_PAGE_DATA', payload: response.data });
+        return response.data;
+      }
+      setStatus('Failed to get data');
+      return null;
+    } catch (messagingErr) {
+      // Try to inject the content script dynamically (works with activeTab)
+      try {
+        setStatus('Injecting content script...');
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content/content.js'],
+        });
+        // Retry after injection
+        const retry = await chrome.tabs.sendMessage(tab.id, { type: 'REQUEST_PAGE_DATA' });
+        if (retry?.ok) {
+          setStatus('Received data');
+          renderData(retry.data);
+          chrome.runtime.sendMessage({ type: 'TURO_PAGE_DATA', payload: retry.data });
+          return retry.data;
+        }
+      } catch (injectErr) {
+        // ignore and fall back
+      }
+      setStatus('Content script not available on this page. Showing last known data.');
+      const last = await chrome.runtime.sendMessage({ type: 'GET_LAST_PAGE_DATA' });
+      renderData(last?.data || null);
+      return last?.data || null;
     }
-    setStatus('Failed to get data');
-    return null;
   } catch (err) {
-    // If content script isn't injected (non-matching page), fall back to last stored
+    // Generic failure; fall back to last stored
     setStatus('Content script not available on this page. Showing last known data.');
     const last = await chrome.runtime.sendMessage({ type: 'GET_LAST_PAGE_DATA' });
     renderData(last?.data || null);

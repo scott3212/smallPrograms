@@ -25,12 +25,17 @@ chrome.alarms.onAlarm.addListener(async (alarm) => {
     const { [STORAGE_KEYS.lastPageData]: lastPageData } = await chrome.storage.local.get(STORAGE_KEYS.lastPageData);
     if (lastPageData) {
       try {
-        chrome.notifications.create({
+        const creation = chrome.notifications.create({
           type: 'basic',
           iconUrl: 'icon128.png',
           title: 'Turo Fleet Manager',
           message: `Daily summary ready from ${new URL(lastPageData.url).hostname}`,
         });
+        // In MV3, some Chrome APIs return Promises when no callback is provided.
+        // Await to catch rejections like missing icon resources.
+        if (creation && typeof creation.then === 'function') {
+          await creation;
+        }
       } catch (_) {
         // Notifications may fail if icon missing; it's optional in dev
       }
