@@ -17,11 +17,15 @@
     "scripting",
     "tabs",
     "alarms",
-    "notifications"
+    "notifications",
+    "identity"
   ],
   "host_permissions": [
     "https://turo.com/*",
-    "https://*.turo.com/*"
+    "https://*.turo.com/*",
+    "https://accounts.google.com/*",
+    "https://www.googleapis.com/*",
+    "https://oauth2.googleapis.com/*"
   ],
   "content_scripts": [
     {

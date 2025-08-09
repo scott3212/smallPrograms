@@ -11,9 +11,29 @@
   </head>
   <body>
     <h1>Options</h1>
-    <label><input type="checkbox" id="autoScrapeOnOpen" /> Auto-scrape when opening Turo pages</label>
-    <p id="status" style="color:#6b7280"></p>
-    <script src="options.js"></script>
+    <section>
+      <h3>General</h3>
+      <label><input type="checkbox" id="autoScrapeOnOpen" /> Auto-scrape when opening Turo pages</label>
+      <p id="status" style="color:#6b7280"></p>
+    </section>
+    <hr />
+    <section>
+      <h3>Google Integration</h3>
+      <p>
+        OAuth Client ID: edit in <code>auth/config.js</code> (<code>GOOGLE_OAUTH_CLIENT_ID</code>) and add redirect URI <code>https://<em>EXTENSION_ID</em>.chromiumapp.org/</code> in Google Cloud Console.
+      </p>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap; margin: 8px 0;">
+        <button id="signInBtn">Sign in with Google</button>
+        <button id="signOutBtn">Sign out</button>
+        <span id="authState" style="color:#6b7280"></span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap: wrap; margin: 8px 0;">
+        <button id="foundationBtn">Create Foundation (Folder + Reservations sheet)</button>
+        <span id="foundationStatus" style="color:#6b7280"></span>
+      </div>
+      <div id="links" style="display:grid; gap:6px; margin-top:6px;"></div>
+    </section>
+    <script type="module" src="options.js"></script>
   </body>
   </html>
 
