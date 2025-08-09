@@ -1,2 +1,9 @@
 # Ignore local OAuth config for TuroChromePlugin
 TuroChromePlugin/auth/config.js
+
+# Global editor/OS ignores
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
